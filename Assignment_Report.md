@@ -145,17 +145,22 @@ This confirms the search filter narrows results to Apple-related models only.
 ## 11. Expected Console Output
 
 ```
+
+========== CART ITEM DETAILS ==========
 Material: Hard
-Price: ₹499
-Link: https://casekaro.com/products/...
-
+Price: ? 69.00
+Link: https://casekaro.com/products/classic-porsche-911-iphone-16-pro-back-cover
+--------------------------------------
 Material: Soft
-Price: ₹499
-Link: https://casekaro.com/products/...
-
+Price: ? 149.00
+Link: https://casekaro.com/products/classic-porsche-911-iphone-16-pro-back-cover?variant=41955668230262
+--------------------------------------
 Material: Glass
-Price: ₹499
-Link: https://casekaro.com/products/...
+Price: ? 249.00
+Link: https://casekaro.com/products/classic-porsche-911-iphone-16-pro-back-cover?variant=41955668263030
+--------------------------------------
+Total Items Printed: 3
+ 
 ```
 
 ---
