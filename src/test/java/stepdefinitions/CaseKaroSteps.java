@@ -20,6 +20,7 @@ public class CaseKaroSteps extends BaseTest {
     private HomePage homePage;
     private MobileCoversPage mobileCoversPage;
     private ProductPage productPage;
+    private String currentSearchedBrand;
 
     @Before
     public void beforeScenario() {
@@ -44,24 +45,27 @@ public class CaseKaroSteps extends BaseTest {
         homePage.clickMobileCovers();
     }
 
-    @And("user searches Apple in phone model search")
-    public void userSearchesAppleInPhoneModelSearch() {
-        mobileCoversPage.searchBrandApple();
+    @And("user searches {string} in phone model search")
+    public void userSearchesBrandInPhoneModelSearch(String brand) {
+        this.currentSearchedBrand = brand;
+        mobileCoversPage.searchBrand(brand);
     }
 
-    @Then("only Apple phone models should be visible")
-    public void onlyApplePhoneModelsShouldBeVisible() {
-        mobileCoversPage.validateAppleModelsVisible();
+    @Then("only {string} phone models should be visible")
+    public void onlyBrandPhoneModelsShouldBeVisible(String brand) {
+        mobileCoversPage.validateBrandModelsVisible(brand);
     }
 
     @And("other brand phone models should not be visible")
     public void otherBrandPhoneModelsShouldNotBeVisible() {
-        mobileCoversPage.validateOtherBrandsNotVisible();
+        mobileCoversPage.validateOtherBrandsNotVisible(
+                currentSearchedBrand != null ? currentSearchedBrand : "Apple"
+        );
     }
 
-    @When("user selects exactly iPhone 16 Pro from suggestions")
-    public void userSelectsExactlyIphone16ProFromSuggestions() {
-        mobileCoversPage.searchAndSelectIphone16Pro();
+    @When("user selects exactly {string} from suggestions")
+    public void userSelectsExactlyModelFromSuggestions(String modelName) {
+        mobileCoversPage.searchAndSelectModel(modelName);
     }
 
     @And("user clicks Choose Options on first product card")
@@ -69,29 +73,19 @@ public class CaseKaroSteps extends BaseTest {
         productPage.clickChooseOptionsOnFirstProduct();
     }
 
-    @And("user adds Hard material variant to cart")
-    public void userAddsHardMaterialVariantToCart() {
-        productPage.addHardMaterial();
+    @And("user adds {string} material variant to cart")
+    public void userAddsMaterialVariantToCart(String material) {
+        productPage.addMaterialVariantToCart(material);
     }
 
-    @And("user adds Soft material variant to cart")
-    public void userAddsSoftMaterialVariantToCart() {
-        productPage.addSoftMaterial();
-    }
-
-    @And("user adds Glass material variant to cart")
-    public void userAddsGlassMaterialVariantToCart() {
-        productPage.addGlassMaterial();
-    }
-
-    @Then("cart should contain all 3 material variants")
-    public void cartShouldContainAll3MaterialVariants() {
-       assertEquals(
-        "All 3 material variants should be captured after Add to Cart",
-        3,
-        productPage.getAddedItems().size()
-);
-        
+    @Then("cart should contain all {string} material variants")
+    public void cartShouldContainAllMaterialVariants(String expectedCountStr) {
+        int expectedCount = Integer.parseInt(expectedCountStr);
+        assertEquals(
+                "All " + expectedCount + " material variants should be captured after Add to Cart",
+                expectedCount,
+                productPage.getAddedItems().size()
+        );
 
         System.out.println("Cart validation passed using captured added item details.");
     }
@@ -99,12 +93,6 @@ public class CaseKaroSteps extends BaseTest {
     @And("user prints material price and product link in console")
     public void userPrintsMaterialPriceAndProductLinkInConsole() {
         List<CartItemDetails> items = productPage.getAddedItems();
-
-        assertEquals(
-        "All 3 item details should be printed",
-        3,
-        items.size()
-);
 
         System.out.println("========== CART ITEM DETAILS ==========");
 

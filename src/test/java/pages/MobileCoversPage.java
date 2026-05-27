@@ -3,124 +3,123 @@ package pages;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
+import utils.AssertionUtils;
+import utils.WaitUtils;
 
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
-public class MobileCoversPage {
+/**
+ * Page Object for the Mobile Covers page.
+ */
+public class MobileCoversPage extends BasePage {
 
     private static final String PHONE_MODEL_SECTION = "Phone cases by model";
     private static final String MODEL_SEARCH_INPUT = "#modelSearch";
     private static final String SEARCH_RESULTS = "#searchResults";
-    private static final String EXACT_IPHONE_16_PRO = "iPhone 16 Pro";
     private static final List<String> OTHER_BRANDS = Arrays.asList(
             "Samsung", "OnePlus", "Vivo", "Oppo", "Realme");
 
-    private final Page page;
+    private final Locator sectionHeading;
+    private final Locator alternativeSectionHeading;
+    private final Locator searchInput;
+    private final Locator dropdownContainer;
 
     public MobileCoversPage(Page page) {
-        this.page = page;
+        super(page);
+        this.sectionHeading = page.getByText(PHONE_MODEL_SECTION,
+                new Page.GetByTextOptions().setExact(false)).first();
+        this.alternativeSectionHeading = page.getByRole(AriaRole.HEADING,
+                new Page.GetByRoleOptions().setName(PHONE_MODEL_SECTION)).first();
+        this.searchInput = page.locator(MODEL_SEARCH_INPUT);
+        this.dropdownContainer = page.locator(SEARCH_RESULTS);
     }
 
     public void scrollToPhoneCasesByModel() {
-        Locator sectionHeading = page.getByText(PHONE_MODEL_SECTION,
-                new Page.GetByTextOptions().setExact(false));
-        if (sectionHeading.count() == 0) {
-            sectionHeading = page.getByRole(AriaRole.HEADING,
-                    new Page.GetByRoleOptions().setName(PHONE_MODEL_SECTION));
-        }
-        sectionHeading.first().scrollIntoViewIfNeeded();
-        sectionHeading.first().waitFor();
-        phoneModelSearchBox().scrollIntoViewIfNeeded();
-        assertTrue("'" + PHONE_MODEL_SECTION + "' section is not visible",
-                sectionHeading.first().isVisible());
+        Locator heading = sectionHeading.count() > 0 ? sectionHeading : alternativeSectionHeading;
+        heading.scrollIntoViewIfNeeded();
+        heading.waitFor();
+        searchInput.scrollIntoViewIfNeeded();
+        AssertionUtils.assertConditionTrue(heading.isVisible(), 
+                "'" + PHONE_MODEL_SECTION + "' section is not visible");
     }
 
-    private Locator phoneModelSearchBox() {
-        return page.locator(MODEL_SEARCH_INPUT);
-    }
-
-    private Locator searchResultsDropdown() {
-        return page.locator(SEARCH_RESULTS);
-    }
-
-    public void searchBrandApple() {
+    public void searchBrand(String brand) {
         scrollToPhoneCasesByModel();
-        Locator searchBox = phoneModelSearchBox();
-        searchBox.waitFor();
-        searchBox.click();
-        searchBox.fill("Apple");
-        searchResultsDropdown().waitFor();
+        WaitUtils.waitForElementVisible(searchInput);
+        click(searchInput);
+        fill(searchInput, brand);
+        WaitUtils.waitForElementVisible(dropdownContainer);
     }
 
-    public void validateAppleModelsVisible() {
-        Locator searchResults = searchResultsDropdown();
-        String appleResultsText = searchResults.innerText();
+    public void validateBrandModelsVisible(String brand) {
+        String resultsText = dropdownContainer.innerText();
 
-        if (appleResultsText.contains("No models found")) {
-            // CaseKaro has no model named "Apple"; Apple devices appear as iPhone models.
-            Locator searchBox = phoneModelSearchBox();
-            searchBox.fill("iPhone");
-            page.waitForCondition(() -> searchResults.locator("a")
-                    .filter(new Locator.FilterOptions().setHasText("iPhone")).count() > 0);
+        String expectedText = brand;
+        if (brand.equalsIgnoreCase("Apple")) {
+            expectedText = "iPhone";
+        }
 
-            Locator iphoneLinks = searchResults.locator("a")
-                    .filter(new Locator.FilterOptions().setHasText("iPhone"));
-            assertTrue("Apple/iPhone models should be available in search",
-                    iphoneLinks.count() > 0);
+        if (resultsText.contains("No models found")) {
+            fill(searchInput, expectedText);
+            String finalExpectedText = expectedText;
+            page.waitForCondition(() -> dropdownContainer.locator("a")
+                    .filter(new Locator.FilterOptions().setHasText(finalExpectedText)).count() > 0);
 
-            searchBox.fill("Apple");
-            searchResults.waitFor();
+            Locator brandLinks = dropdownContainer.locator("a")
+                    .filter(new Locator.FilterOptions().setHasText(expectedText));
+            AssertionUtils.assertConditionTrue(brandLinks.count() > 0,
+                    brand + "/" + expectedText + " models should be available in search");
+
+            fill(searchInput, brand);
+            WaitUtils.waitForElementVisible(dropdownContainer);
             return;
         }
 
-        Locator appleOrIphoneLinks = searchResults.locator("a")
-                .filter(new Locator.FilterOptions().setHasText("iPhone"));
-        assertTrue("No Apple/iPhone models visible after Apple search",
-                appleOrIphoneLinks.count() > 0);
+        Locator brandLinks = dropdownContainer.locator("a")
+                .filter(new Locator.FilterOptions().setHasText(expectedText));
+        AssertionUtils.assertConditionTrue(brandLinks.count() > 0,
+                "No " + brand + "/" + expectedText + " models visible after search");
     }
 
-    public void validateOtherBrandsNotVisible() {
-        String resultsText = searchResultsDropdown().innerText();
+    public void validateOtherBrandsNotVisible(String searchedBrand) {
+        String resultsText = dropdownContainer.innerText();
         for (String brand : OTHER_BRANDS) {
-            assertFalse("Brand '" + brand + "' should not appear in search results after Apple search",
-                    resultsText.contains(brand));
+            if (!brand.equalsIgnoreCase(searchedBrand)) {
+                AssertionUtils.assertConditionFalse(resultsText.contains(brand),
+                        "Brand '" + brand + "' should not appear in search results after " + searchedBrand + " search");
+            }
         }
     }
 
-    public void searchAndSelectIphone16Pro() {
-        Locator searchBox = phoneModelSearchBox();
-        searchBox.scrollIntoViewIfNeeded();
-        searchBox.click();
-        searchBox.clear();
-        searchBox.fill("iPhone 16 Pro");
+    public void searchAndSelectModel(String modelName) {
+        WaitUtils.waitForElementVisible(searchInput);
+        searchInput.scrollIntoViewIfNeeded();
+        click(searchInput);
+        fill(searchInput, modelName);
 
-        assertEquals("Search box must show iPhone 16 Pro (not Apple)",
-                "iPhone 16 Pro", searchBox.inputValue());
+        AssertionUtils.assertEqualsWithMessage(modelName, searchInput.inputValue(), 
+                "Search box value mismatch");
 
-        Locator searchResults = searchResultsDropdown();
-        searchResults.waitFor();
-        page.waitForCondition(() -> searchResults.locator("a").count() >= 1);
+        WaitUtils.waitForElementVisible(dropdownContainer);
+        page.waitForCondition(() -> dropdownContainer.locator("a").count() >= 1);
 
-        Locator iphone16ProLink = findExactIphone16ProLink(searchResults);
-        assertTrue("Exact '" + EXACT_IPHONE_16_PRO + "' must appear in dropdown",
-                iphone16ProLink != null);
+        Locator modelLink = findExactModelLink(modelName);
+        AssertionUtils.assertConditionTrue(modelLink != null, 
+                "Exact '" + modelName + "' must appear in dropdown");
 
-        iphone16ProLink.click();
-        page.waitForURL("**/iphone-16-pro**");
-        assertTrue("iPhone 16 Pro collection page was not opened. URL: " + page.url(),
-                page.url().contains("iphone-16-pro"));
+        click(modelLink);
+        String urlPattern = modelName.toLowerCase().replace(" ", "-");
+        page.waitForURL("**/" + urlPattern + "**");
+        AssertionUtils.assertPageUrlContains(getUrl(), urlPattern, 
+                modelName + " collection page was not opened");
     }
 
-    private Locator findExactIphone16ProLink(Locator searchResults) {
-        Locator links = searchResults.locator("a");
+    private Locator findExactModelLink(String modelName) {
+        Locator links = dropdownContainer.locator("a");
         for (int i = 0; i < links.count(); i++) {
             Locator link = links.nth(i);
-            if (EXACT_IPHONE_16_PRO.equals(link.innerText().trim())) {
+            if (modelName.equalsIgnoreCase(link.innerText().trim())) {
                 return link;
             }
         }

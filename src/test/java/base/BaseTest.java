@@ -5,15 +5,12 @@ import com.microsoft.playwright.BrowserContext;
 import com.microsoft.playwright.BrowserType;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
+import utils.ConfigReader;
 
 /**
- * Manages Playwright browser lifecycle for all Cucumber scenarios.
+ * Manages Playwright browser lifecycle dynamically using config.properties.
  */
 public class BaseTest {
-
-    public static final String BASE_URL = "https://casekaro.com/";
-    public static final boolean HEADED = true;
-    public static final int DEFAULT_TIMEOUT_MS = 60_000;
 
     protected static Playwright playwright;
     protected static Browser browser;
@@ -21,17 +18,41 @@ public class BaseTest {
     protected static Page page;
 
     public void setUp() {
+        System.out.println("INITIALIZING PLAYWRIGHT FACTORY...");
         playwright = Playwright.create();
-        browser = playwright.chromium().launch(
-                new BrowserType.LaunchOptions().setHeadless(!HEADED));
+        
+        String browserName = ConfigReader.getBrowser().toLowerCase();
+        boolean headless = ConfigReader.isHeadless();
+        int timeout = ConfigReader.getTimeout();
+        int width = ConfigReader.getWidth();
+        int height = ConfigReader.getHeight();
+
+        System.out.println("LAUNCHING BROWSER: " + browserName + " (Headless: " + headless + ")");
+        BrowserType.LaunchOptions launchOptions = new BrowserType.LaunchOptions().setHeadless(headless);
+
+        switch (browserName) {
+            case "firefox":
+                browser = playwright.firefox().launch(launchOptions);
+                break;
+            case "webkit":
+                browser = playwright.webkit().launch(launchOptions);
+                break;
+            case "chromium":
+            default:
+                browser = playwright.chromium().launch(launchOptions);
+                break;
+        }
+
         context = browser.newContext(new Browser.NewContextOptions()
-                .setViewportSize(1920, 1080));
+                .setViewportSize(width, height));
         page = context.newPage();
-        page.setDefaultTimeout(DEFAULT_TIMEOUT_MS);
-        page.setDefaultNavigationTimeout(DEFAULT_TIMEOUT_MS);
+        
+        page.setDefaultTimeout(timeout);
+        page.setDefaultNavigationTimeout(timeout);
     }
 
     public void tearDown() {
+        System.out.println("TEARING DOWN BROWSER CONTEXT...");
         if (page != null) {
             page.close();
         }

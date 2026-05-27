@@ -1,56 +1,62 @@
 package pages;
 
-import base.BaseTest;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
 import com.microsoft.playwright.options.LoadState;
+import utils.AssertionUtils;
+import utils.ConfigReader;
+import utils.WaitUtils;
 
-import static org.junit.Assert.assertTrue;
+/**
+ * Page Object for CaseKaro Home Page.
+ */
+public class HomePage extends BasePage {
 
-public class HomePage {
-
-    private final Page page;
+    private final Locator logoLink;
+    private final Locator mobileCoversLink;
+    private final Locator alternativeMobileCoversLink;
+    private final Locator modelSearchInput;
 
     public HomePage(Page page) {
-        this.page = page;
+        super(page);
+        this.logoLink = page.getByRole(AriaRole.LINK,
+                new Page.GetByRoleOptions().setName("Casekaro").setExact(true)).first();
+        this.mobileCoversLink = page.getByRole(AriaRole.LINK,
+                new Page.GetByRoleOptions().setName("Mobile Covers")).first();
+        this.alternativeMobileCoversLink = page.locator("a").filter(
+                new Locator.FilterOptions().setHasText("Mobile Covers")).first();
+        this.modelSearchInput = page.locator("#modelSearch");
     }
 
     public void openWebsite() {
-        page.navigate(BaseTest.BASE_URL);
-        page.waitForLoadState(LoadState.DOMCONTENTLOADED);
+        navigate(ConfigReader.getUrl());
         verifyHomepageLoaded();
     }
 
     public void verifyHomepageLoaded() {
-        assertTrue("CaseKaro homepage did not load",
-                page.url().contains("casekaro.com"));
-        Locator logo = page.getByRole(AriaRole.LINK,
-                new Page.GetByRoleOptions().setName("Casekaro").setExact(true));
-        logo.first().waitFor();
-        assertTrue("CaseKaro logo/link is not visible on homepage",
-                logo.first().isVisible());
+        AssertionUtils.assertPageUrlContains(getUrl(), "casekaro", "CaseKaro homepage did not load");
+        WaitUtils.waitForElementVisible(logoLink);
+        AssertionUtils.assertConditionTrue(logoLink.isVisible(), "CaseKaro logo/link is not visible on homepage");
     }
 
     public void clickMobileCovers() {
-        Locator mobileCoversLink = page.getByRole(AriaRole.LINK,
-                new Page.GetByRoleOptions().setName("Mobile Covers"));
-        if (mobileCoversLink.count() == 0) {
-            mobileCoversLink = page.locator("a").filter(
-                    new Locator.FilterOptions().setHasText("Mobile Covers"));
+        if (mobileCoversLink.count() > 0) {
+            click(mobileCoversLink);
+        } else {
+            click(alternativeMobileCoversLink);
         }
-        mobileCoversLink.first().click();
-        page.waitForLoadState(LoadState.DOMCONTENTLOADED);
+        WaitUtils.waitForPageLoadState(page, LoadState.DOMCONTENTLOADED);
         verifyMobileCoversNavigation();
     }
 
     public void verifyMobileCoversNavigation() {
-        String currentUrl = page.url();
+        String currentUrl = getUrl();
         boolean onMobilePage = currentUrl.contains("phone-cases-by-model")
                 || currentUrl.contains("mobile")
                 || currentUrl.contains("back-cover")
-                || page.locator("#modelSearch").isVisible();
-        assertTrue("Mobile Covers page was not opened successfully. URL: " + currentUrl,
-                onMobilePage);
+                || modelSearchInput.isVisible();
+        AssertionUtils.assertConditionTrue(onMobilePage, 
+                "Mobile Covers page was not opened successfully. URL: " + currentUrl);
     }
 }
