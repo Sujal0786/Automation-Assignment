@@ -34,6 +34,13 @@ public class BaseTest {
             case "firefox":
                 browser = playwright.firefox().launch(launchOptions);
                 break;
+                 case "edge":
+        browser = playwright.chromium().launch(
+            new BrowserType.LaunchOptions()
+                .setChannel("msedge")
+                .setHeadless(headless)
+        );
+        break;
             case "webkit":
                 browser = playwright.webkit().launch(launchOptions);
                 break;
@@ -41,6 +48,7 @@ public class BaseTest {
             default:
                 browser = playwright.chromium().launch(launchOptions);
                 break;
+                
         }
 
         context = browser.newContext(new Browser.NewContextOptions()

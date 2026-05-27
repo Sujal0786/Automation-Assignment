@@ -9,10 +9,12 @@ import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import models.CartItemDetails;
 import static org.junit.Assert.assertEquals;
+import pages.CartPage;
 import pages.HomePage;
 import pages.MobileCoversPage;
 import pages.ProductPage;
 
+import java.util.Arrays;
 import java.util.List;
 
 public class CaseKaroSteps extends BaseTest {
@@ -20,6 +22,7 @@ public class CaseKaroSteps extends BaseTest {
     private HomePage homePage;
     private MobileCoversPage mobileCoversPage;
     private ProductPage productPage;
+    private CartPage cartPage;
     private String currentSearchedBrand;
 
     @Before
@@ -28,6 +31,7 @@ public class CaseKaroSteps extends BaseTest {
         homePage = new HomePage(getPage());
         mobileCoversPage = new MobileCoversPage(getPage());
         productPage = new ProductPage(getPage());
+        cartPage = new CartPage(getPage());
     }
 
     @After
@@ -78,31 +82,21 @@ public class CaseKaroSteps extends BaseTest {
         productPage.addMaterialVariantToCart(material);
     }
 
+    @And("user opens the cart")
+    public void userOpensTheCart() {
+        cartPage.openCart();
+    }
+
     @Then("cart should contain all {string} material variants")
     public void cartShouldContainAllMaterialVariants(String expectedCountStr) {
         int expectedCount = Integer.parseInt(expectedCountStr);
-        assertEquals(
-                "All " + expectedCount + " material variants should be captured after Add to Cart",
-                expectedCount,
-                productPage.getAddedItems().size()
-        );
-
-        System.out.println("Cart validation passed using captured added item details.");
+        cartPage.validateCartItemCount(expectedCount);
+        cartPage.validateMaterialsPresentInCart(Arrays.asList("Hard", "Soft", "Glass"));
+        System.out.println("Cart validation passed successfully on the Cart Page.");
     }
 
     @And("user prints material price and product link in console")
     public void userPrintsMaterialPriceAndProductLinkInConsole() {
-        List<CartItemDetails> items = productPage.getAddedItems();
-
-        System.out.println("========== CART ITEM DETAILS ==========");
-
-        for (CartItemDetails item : items) {
-            System.out.println("Material: " + item.getMaterial());
-            System.out.println("Price: " + item.getPrice());
-            System.out.println("Link: " + item.getProductLink());
-            System.out.println("--------------------------------------");
-        }
-
-        System.out.println("Total Items Printed: " + items.size());
+        cartPage.printCartItemDetails();
     }
 }

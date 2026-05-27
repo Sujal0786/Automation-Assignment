@@ -41,7 +41,7 @@ public class ProductPage extends BasePage {
         this.materialLegend = page.locator("legend.form__label");
         this.addToCartButton = page.locator("button[name='add']");
         this.priceContainer = page.locator(".product__info-container .price");
-        this.cartBubble = page.locator("#cart-icon-bubble .cart-count-bubble, .cart-count-bubble");
+        this.cartBubble = page.locator("#cart-icon-bubble .cart-count-bubble:visible, .cart-count-bubble:visible");
         this.cartDrawerCloseButton = page.locator(
                 "cart-drawer button[aria-label='Close'], " +
                 "button[aria-label='Close'], " +
@@ -82,6 +82,7 @@ public class ProductPage extends BasePage {
 
         navigate(storedProductUrl);
         waitForProductPageReady();
+        page.waitForTimeout(2000); // Allow Shopify cart/theme script event listeners to bind
 
         int beforeCount = getCartBubbleCount();
         System.out.println("Before adding " + material + " cart count: " + beforeCount);

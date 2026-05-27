@@ -15,6 +15,7 @@ Feature: CaseKaro mobile cover cart validation
     And user adds "<material1>" material variant to cart
     And user adds "<material2>" material variant to cart
     And user adds "<material3>" material variant to cart
+    And user opens the cart
     Then cart should contain all "<expectedCount>" material variants
     And user prints material price and product link in console
 

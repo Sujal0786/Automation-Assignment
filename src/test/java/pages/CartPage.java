@@ -23,12 +23,12 @@ public class CartPage extends BasePage {
         super(page);
         this.cartContainer = page.locator("#main-cart-items, .cart__items, main");
         this.cartLineItems = page.locator(
-                "#main-cart-items .cart-item, " +
-                ".cart__items .cart-item, " +
-                "tr.cart-item, " +
-                ".cart-item"
+                "#main-cart-items .cart-item:visible, " +
+                ".cart__items .cart-item:visible, " +
+                "tr.cart-item:visible, " +
+                ".cart-item:visible"
         );
-        this.cartBubble = page.locator("#cart-icon-bubble .cart-count-bubble, .cart-count-bubble");
+        this.cartBubble = page.locator("#cart-icon-bubble .cart-count-bubble:visible, .cart-count-bubble:visible");
     }
 
     public void openCart() {
